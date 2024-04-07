@@ -4,7 +4,8 @@ import { Engine,
   Bodies, 
   World, 
   Body, 
-  Sleeping 
+  Sleeping,
+  Events
 } from "matter-js";
 import { FRUITS } from "./fruits";
 
@@ -64,7 +65,8 @@ function addCurrentFruit() {
     isSleeping: true,
     render: {
       fillStyle: randomFruit.color,
-    }
+    },
+    restitution: 0.2,
   });
 
   currentBody = body;
@@ -77,7 +79,7 @@ function getRandomFruit () {
   const randomIndex = Math.floor(Math.random() * 5);
   const fruit = FRUITS[randomIndex];
 
-  if (currentFruit.label === fruit.label)
+  if (currentFruit && currentFruit.label === fruit.label)
     return getRandomFruit()
 
   return fruit;
@@ -124,5 +126,30 @@ window.onkeyup = (event) => {
   }
 };
 
+Events.on(engine, "collisionStart", (event) => {
+  event.pairs.forEach((collision) => {
+    if (collision.bodyA.label === collision.bodyB.label) {
+      World.remove(world, [collision.bodyA, collision.bodyB]);
+
+      const index = FRUITS.findIndex(
+        (fruit) => fruit.label === collision.bodyA.label
+      );
+
+      const newFruit = FRUITS[index + 1];
+      const body = Bodies.circle(
+        collision.collision.supports[0].x,
+        collision.collision.supports[0].y,
+        newFruit.radius,
+        {
+          render: {
+            fillStyle: newFruit.color,
+          },
+          label: newFruit.label,
+        }
+      );
+      World.add(world, body);
+    }
+  });
+});
 
 addCurrentFruit();
